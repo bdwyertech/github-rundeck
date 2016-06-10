@@ -12,8 +12,6 @@ require 'rack/cache'
 # => GitHub RunDeck
 class GithubRunDeck < Sinatra::Base
   register Sinatra::Namespace
-  class Error < StandardError
-  end
 
   class << self
     attr_accessor :config_file
@@ -26,9 +24,7 @@ class GithubRunDeck < Sinatra::Base
     register Sinatra::Reloader
   end
 
-  def self.app_name
-    'github-rundeck'
-  end
+  VERSION = '0.1.0'.freeze
 
   ######################
   # =>  Definitions  <=#
@@ -64,15 +60,14 @@ class GithubRunDeck < Sinatra::Base
 
   # => Current Configuration & Healthcheck Endpoint
   get '/' do
-    content_type 'text/plain'
-    <<-EOS.gsub(/^\s+/, '')
-      #{GithubRunDeck.app_name} is up and running!
-      :config_file = #{GithubRunDeck.config_file}
-      :cache_timeout = #{GithubRunDeck.cache_timeout}
-      :github_oauth_token = #{!GithubRunDeck.github_oauth_token.nil?}
-      :params = #{params.inspect}
-    EOS
-    puts ENV['rack-cache']
+    content_type 'application/json'
+    JSON.pretty_generate(
+      Status: "#{self.class} is up and running!",
+      ConfigFile: GithubRunDeck.config_file,
+      CacheTimeout: GithubRunDeck.cache_timeout,
+      GithubOAuthToken: GithubRunDeck.github_oauth_token,
+      Params: params.inspect
+    )
   end
 
   #######################
@@ -85,8 +80,8 @@ class GithubRunDeck < Sinatra::Base
       # => This is a JSON API
       content_type 'application/json'
 
-      # => Cache GitHub Responses for 30 Seconds
-      cache_control :public, max_age: 30
+      # => Cache GitHub Responses
+      cache_control :public, max_age: GithubRunDeck.cache_timeout || 30
 
       # => Parameter Overrides
       Github.configure do |cfg|

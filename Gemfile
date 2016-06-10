@@ -1,7 +1,13 @@
 source 'https://rubygems.org'
 
-gem 'sinatra'
-gem 'sinatra-contrib' # => For namespaces
 gem 'github_api'
 gem 'mixlib-cli'
-gem 'rack-cache' # => Cache Responses
+gem 'rack-cache'
+gem 'sinatra'
+gem 'sinatra-contrib'
+
+group :development do
+  gem 'rake'
+  gem 'rspec'
+  gem 'rubocop'
+end
