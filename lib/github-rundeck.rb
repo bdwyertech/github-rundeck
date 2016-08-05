@@ -24,7 +24,7 @@ class GithubRunDeck < Sinatra::Base
     register Sinatra::Reloader
   end
 
-  VERSION = '0.1.0'.freeze
+  VERSION = '0.1.1'.freeze
 
   ######################
   # =>  Definitions  <=#
@@ -91,22 +91,22 @@ class GithubRunDeck < Sinatra::Base
 
     # => Get Organization Repo List
     get '/repos/org/:org' do |org|
-      ghresponse = ghclient.with(org: org).list(per_page: 100)
+      ghresponse = ghclient.list(org: org, per_page: 100)
       etag ghresponse.headers.etag
       body serialize(ghresponse)
     end
 
     # => Get User Repo List
     get '/repos/user/:user' do |user|
-      ghresponse = ghclient.with(user: user).list(per_page: 100)
+      ghresponse = ghclient.list(user: user, per_page: 100)
       etag ghresponse.headers.etag
       body serialize(ghresponse)
     end
 
     # => Get Branch/Tag Names
     get '/revisions/:user/:repo' do |user, repo|
-      branches = ghclient.with(user: user, repo: repo).branches
-      tags = ghclient.with(user: user, repo: repo).tags
+      branches = ghclient.branches(user: user, repo: repo)
+      tags = ghclient.tags(user: user, repo: repo)
       body serialize_revisions(branches, tags)
     end
   end
