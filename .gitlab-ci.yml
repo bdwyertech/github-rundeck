@@ -7,7 +7,6 @@ before_script:
 test:Ruby 2.2:
   image: ruby:2.2
   cache:
-    group: ruby_2.2
     paths:
       - .bundle
       - vendor/bundle
@@ -21,7 +20,6 @@ test:Ruby 2.2:
 release:Ruby 2.2:
   image: ruby:2.2
   cache:
-    group: ruby_2.2
     paths:
       - .bundle
       - vendor/bundle
