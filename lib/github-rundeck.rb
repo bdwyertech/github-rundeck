@@ -24,7 +24,7 @@ class GithubRunDeck < Sinatra::Base
     register Sinatra::Reloader
   end
 
-  VERSION = '0.1.1'.freeze
+  VERSION = '0.1.2'.freeze
 
   ######################
   # =>  Definitions  <=#
@@ -32,7 +32,7 @@ class GithubRunDeck < Sinatra::Base
 
   def ghclient
     # => Instantiate a new GitHub Client
-    Github::Client::Repos.new
+    Github::Client.new
   end
 
   def serialize(response)
@@ -91,23 +91,51 @@ class GithubRunDeck < Sinatra::Base
 
     # => Get Organization Repo List
     get '/repos/org/:org' do |org|
-      ghresponse = ghclient.list(org: org, per_page: 100)
+      ghresponse = ghclient.repos.list(org: org, per_page: 100)
       etag ghresponse.headers.etag
       body serialize(ghresponse)
     end
 
     # => Get User Repo List
     get '/repos/user/:user' do |user|
-      ghresponse = ghclient.list(user: user, per_page: 100)
+      ghresponse = ghclient.repos.list(user: user, per_page: 100)
       etag ghresponse.headers.etag
       body serialize(ghresponse)
     end
 
     # => Get Branch/Tag Names
     get '/revisions/:user/:repo' do |user, repo|
-      branches = ghclient.branches(user: user, repo: repo)
-      tags = ghclient.tags(user: user, repo: repo)
+      branches = ghclient.repos.branches(user: user, repo: repo)
+      tags = ghclient.repos.tags(user: user, repo: repo)
       body serialize_revisions(branches, tags)
+    end
+
+    # => Compare Branch/Tags
+    get '/compare/:user/:repo' do |user, repo|
+      # => Check Parameters - Default to Master
+      refs = [
+        { 'target' => params['ref1'] || 'master' },
+        { 'target' => params['ref2'] || 'master' }
+      ]
+
+      begin
+        refs.each do |ref|
+          # => Pull the SHA
+          ref['sha'] = ghclient.git_data.trees.get(user, repo, ref['target']).first[1]
+        end
+
+        if refs[0]['sha'] == refs[1]['sha']
+          return "ref1(#{user}/#{repo}/#{refs[0]['target']}) is the same as ref2(#{user}/#{repo}/#{refs[1]['target']})".to_json
+        else
+          status 500 unless params['errorok'] == '1'
+          return "ALERT!!! - ref1(#{user}/#{repo}/#{refs[0]['target']}) is different than ref2(#{user}/#{repo}/#{refs[1]['target']})".to_json
+        end
+
+      # => Catch any GitHub Errors
+      rescue Github::Error::GithubError => e
+        status 500 unless params['errorok'] == '1'
+        e.message.to_json
+      end
     end
   end
 end
