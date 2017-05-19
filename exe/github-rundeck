@@ -1,82 +1,15 @@
 #!/usr/bin/env ruby
 # encoding: UTF-8
-# rubocop: disable LineLength
 # RunDeck Options Provider - GitHub Repositories
 # Brian Dwyer - Intelligent Digital Services - 5/14/16
 
 lib = File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
-require 'rubygems'
+# => Catch Ctrl+C's to avoid stack traces
+Signal.trap('INT') { abort }
+
 require 'github-rundeck'
-require 'mixlib/cli'
-require 'json'
 
-# => Github-RunDeck Launcher
-class GithubRunDeckCLI
-  include Mixlib::CLI
-
-  option :github_oauth_token,
-         short: '-o TOKEN',
-         long: '--github-oauth-token TOKEN',
-         description: 'OAuth Token to use for querying GitHub',
-         default: nil
-
-  option :cache_timeout,
-         short: '-t CACHE_TIMEOUT',
-         long: '--timeout CACHE_TIMEOUT',
-         description: 'Sets the response timeout in seconds for the query data.',
-         default: 30
-
-  option :config_file,
-         short: '-c CONFIG',
-         long: '--config CONFIG',
-         description: 'The configuration file to use, as opposed to command-line parameters (optional)',
-         default: nil
-
-  option :host,
-         short: '-h HOST',
-         long: '--host HOST',
-         description: 'Listen on HOST (default: localhost)',
-         default: 'localhost'
-
-  option :port,
-         short: '-p PORT',
-         long: '--port PORT',
-         description: 'The port to run on, default 9123',
-         default: 9123
-
-  option :env,
-         short: '-e ENV',
-         long: '--env ENV',
-         description: 'Sets the environment for chef-rundeck to execute under. Use "development" for more logging.',
-         default: 'production'
-end
-
-cli = GithubRunDeckCLI.new
-cli.parse_options
-
-# => Define JSON Parser
-def parse_json_config(file = nil)
-  return unless file && ::File.exist?(file.to_s)
-  begin
-    ::JSON.parse(::File.read(file.to_s), symbolize_names: true)
-  rescue JSON::ParserError
-    return
-  end
-end
-
-# => Parse JSON Config File
-json_config = parse_json_config(cli.config[:config_file])
-
-# => Merge Configuration (JSON File Wins)
-config = [cli.config, json_config].compact.reduce(:merge)
-
-# => Apply Configuration
-GithubRunDeck.github_oauth_token = config[:github_oauth_token]
-GithubRunDeck.cache_timeout = config[:cache_timeout].to_i
-GithubRunDeck.config_file = config[:config_file] if json_config
-GithubRunDeck.environment = config[:env].to_sym
-
-# => Launch the Application
-GithubRunDeck.run! bind: config[:host], port: config[:port]
+# => Launch the Plugin
+GithubRunDeck::CLI.run(ARGV)

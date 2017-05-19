@@ -8,7 +8,7 @@ This gem delivers RunDeck options in the supported JSON format
 * List of Branch/Tag Names for a Repo - `GET` - *http://localhost:9125/github/v1/revisions/${ORGNAME}/${REPONAME}*
 
 ### OAuth Key
-You can feed a GitHub OAuth key via local configuration, or as the Query Parameter `oauth_token`
+You can feed a GitHub OAuth key via local configuration, or as the Query Parameter `gh_oauth_token`
 
 
 ## Installation
